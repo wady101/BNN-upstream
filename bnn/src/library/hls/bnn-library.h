@@ -52,7 +52,6 @@ using namespace std;
 
 #include "streamtools.h"
 #include "dma.h"
-#include "matrixvector.h"
 #include "slidingwindow.h"
 #include "maxpool.h"
 #include "fclayer.h"
