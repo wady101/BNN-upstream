@@ -1,78 +1,82 @@
-# BNN-PYNQ PIP INSTALL Package
+# BNN-PYNQ Integration Baseline for IMECNet
 
-This repo contains the pip install package for Quantized Neural Network (QNN) on PYNQ. 
-Two different network topologies are here included, namely CNV and LFC as described in the <a href="https://arxiv.org/abs/1612.07119" target="_blank"> FINN Paper </a>. 
-Now, there are multiple implementations available supporting different precision for weights and activation:
+This repository is the legacy [BNN-PYNQ](https://github.com/Xilinx/BNN-PYNQ) framework snapshot used while developing **IMECNet**, a research accelerator for binary neural networks on FPGAs. It is retained as an integration baseline and for historical reproducibility; the IMEC hardware implementation lives in a separate repository.
 
-- 1 bit weights and 1 bit activation (W1A1) for CNV and LFC
-- 1 bit weights and 2 bit activation (W1A2) for CNV and LFC
-- 2 bit weights and 2 bit activation (W2A2) for CNV
+> **Research artifact:** this code targets the 2018–2020 Xilinx/PYNQ toolchain and is not a maintained production framework. The repository records the environment used for the thesis rather than a current FINN release.
 
-We support 3 boards for hardware acceleration which are Pynq-Z1, Pynq-Z2 and Ultra96 (with PYNQ image).
+## Project repositories
+
+| Repository | Purpose |
+| --- | --- |
+| [`imecnet-hlslib`](https://github.com/wady101/imecnet-hlslib) | Core Vivado HLS implementation of Inverse Memory Efficient Convolution (IMEC), the streaming BNN pipeline, testbenches, and generated network parameters. |
+| [`imecnet-training-thesis`](https://github.com/wady101/imecnet-training-thesis) | Standalone experimental training and checkpoint-to-HLS conversion work. |
+| [`BNN-upstream`](https://github.com/wady101/BNN-upstream) | This repository: the BNN-PYNQ integration baseline and the surrounding PYNQ packaging, notebooks, bitstreams, and host code. |
+
+The checked-in `bnn/src/library/finn-hlslib` directory is a copy of the upstream FINN HLS interface used by this framework snapshot. It is not the IMEC implementation. See `imecnet-hlslib` for `MEC`, the IMEC convolution layer, and the thesis-specific pipeline.
+
+## Artifact scope
+
+The complete research flow was split across the repositories above:
+
+1. Train or adapt the binary Network-in-Network model in `imecnet-training-thesis`.
+2. Convert checkpoints into HLS configuration, weights, and thresholds with `cifar/parser_gen.py`.
+3. Simulate and synthesize the IMEC pipeline in `imecnet-hlslib`.
+4. Use this BNN-PYNQ snapshot for the legacy PYNQ host, packaging, and board-integration context.
+
+There is no current one-command build joining all three archives. Paths and generated files reflect the original research environment and may need adjustment for a local installation.
+
+## Legacy BNN-PYNQ baseline
+
+The baseline contains CNV and LFC accelerators with several weight/activation precisions:
+
+- 1-bit weights and 1-bit activations for CNV and LFC
+- 1-bit weights and 2-bit activations for CNV and LFC
+- 2-bit weights and 2-bit activations for CNV
+- PYNQ-Z1, PYNQ-Z2, and Ultra96 board assets
+
+The original hardware flow was tested with Vivado 2018.2. To rebuild a baseline design:
+
+```bash
+git clone https://github.com/wady101/BNN-upstream.git
+cd BNN-upstream/bnn/src/network
+export XILINX_BNN_ROOT="$(cd .. && pwd)"
+./make-hw.sh cnvW1A1 pynqZ1-Z2 a
+```
+
+The generated bitstreams, HLS reports, and Vivado projects are written below `bnn/src/network/output/`. Refer to the [upstream BNN-PYNQ repository](https://github.com/Xilinx/BNN-PYNQ) for its maintained historical documentation.
 
 ## Citation
-If you find BNN-PYNQ useful, please cite the <a href="https://arxiv.org/abs/1612.07119" target="_blank">FINN paper</a>:
 
-    @inproceedings{finn,
-    author = {Umuroglu, Yaman and Fraser, Nicholas J. and Gambardella, Giulio and Blott, Michaela and Leong, Philip and Jahre, Magnus and Vissers, Kees},
-    title = {FINN: A Framework for Fast, Scalable Binarized Neural Network Inference},
-    booktitle = {Proceedings of the 2017 ACM/SIGDA International Symposium on Field-Programmable Gate Arrays},
-    series = {FPGA '17},
-    year = {2017},
-    pages = {65--74},
-    publisher = {ACM}
-    }
+If this artifact or the IMEC architecture supports your work, please cite the thesis:
 
-## Quick Start
-
-Please refer to PYNQ <a href="https://pynq.readthedocs.io/en/latest/getting_started.html" target="_blank"> Getting Started</a> guide to set-up your PYNQ Board.
-
-In order to install it to your PYNQ, connect to the board, open a terminal and type:
-
-```
-sudo pip3 install git+https://github.com/Xilinx/BNN-PYNQ.git (on PYNQ v2.3 and later versions, tested up to v2.5)
-sudo pip3.6 install git+https://github.com/Xilinx/BNN-PYNQ.git (on PYNQ v2.2 and earlier)
+```bibtex
+@mastersthesis{wadhwa2020imecbinnets,
+  author  = {Wadhwa, Eashan},
+  title   = {{IMECBinNets}: A Framework for Deploying Neural Networks on FPGAs},
+  school  = {Trinity College Dublin},
+  year    = {2020},
+  month   = apr,
+  doi     = {10.13140/RG.2.2.13870.73287}
+}
 ```
 
-This will install the BNN package to your board, and create a **bnn** directory in the Jupyter home area. You will find the Jupyter notebooks to test the networks in this directory.
+Thesis: [doi:10.13140/RG.2.2.13870.73287](https://doi.org/10.13140/RG.2.2.13870.73287)
 
-## Repo organization 
+## Upstream work
 
-The repo is organized as follows:
+IMECNet was developed from the BNN-PYNQ and FINN ecosystem. Please also cite FINN when using the inherited framework:
 
--	bnn: contains the LfcClassifier and CnvClassifier python class description
-	-	src: contains the sources of the different precision networks, the libraries to rebuild them, and scripts to train and pack the weights:
-		- library: FINN library for HLS QNN descriptions, host code, script to rebuilt and drivers for the PYNQ and Ultra96 (please refer to README for more details)
-		- network: HLS top functions for QNN topologies (CNV and LFC) with different implementations for weight and activation precision, host code and make script for HW and SW build (please refer to README for more details)
-		- training: scripts to train on the Cifar10, GTSRB and MNIST datasets and scripts to pack the weights in a binary format which can be read by the overlay
-	-	bitstreams: contains the bitstreams for the 5 overlays
-		- pynqZ1-Z2: bitstreams for Pynq devices
-		- ultra96: bitstreams for Ultra96 devices
-	-	libraries: pre-compiled shared objects for low-level driver of the 5 overlays each for hardware and software runtime
-		- pynqZ1-Z2: shared objects used by Pynq devices
-		- ultra96: shared objects used by ultra96
-	-	params: set of trained parameters for the 5 overlays:
-		- <a href="http://yann.lecun.com/exdb/mnist/" target="_blank"> MNIST </a> and <a href="https://www.nist.gov/srd/nist-special-database-19" target="_blank"> NIST </a> dataset for LFC network. Note that NIST dataset is only applicable to LFC-W1A1 by default.
-		- <a href="https://www.cs.toronto.edu/~kriz/cifar.html" target="_blank"> Cifar10 </a>, <a href="http://ufldl.stanford.edu/housenumbers/" target="_blank"> SVHN </a> and <a href="http://benchmark.ini.rub.de/?section=gtsdb&subsection=dataset" target="_blank"> German Road Signs </a> dataset for CNV network. Note that SVHN and German Road Signs databases are only applicable to CNV-W1A1 by default.
--	notebooks: lists a set of python notebooks examples, that during installation will be moved in `/home/xilinx/jupyter_notebooks/bnn/` folder
--	tests: contains test script and test images
+```bibtex
+@inproceedings{umuroglu2017finn,
+  author    = {Umuroglu, Yaman and Fraser, Nicholas J. and Gambardella, Giulio and Blott, Michaela and Leong, Philip and Jahre, Magnus and Vissers, Kees},
+  title     = {{FINN}: A Framework for Fast, Scalable Binarized Neural Network Inference},
+  booktitle = {Proceedings of the 2017 ACM/SIGDA International Symposium on Field-Programmable Gate Arrays},
+  year      = {2017},
+  pages     = {65--74},
+  publisher = {ACM}
+}
+```
 
-## Hardware design rebuilt
+## License
 
-In order to rebuild the hardware designs, the repo should be cloned in a machine with installation of the Vivado Design Suite (tested with 2018.2). 
-Following the step-by-step instructions:
-
-1.	Clone the repository on your linux machine: `git clone https://github.com/Xilinx/BNN-PYNQ.git --recursive`;
-2.	Move to `<clone_path>/BNN_PYNQ/bnn/src/network/`
-3.	Set the XILINX_BNN_ROOT environment variable to `<clone_path>/BNN_PYNQ/bnn/src/`
-4.	Launch the shell script make-hw.sh with passing parameters for target network, target platform and mode, with the command `./make-hw.sh {network} {platform} {mode}` where:
-	- network can be cnvW1A1, cnvW1A2, cnvW2A2 or lfcW1A1, lfcW1A2;
-	- platform can be pynqZ1-Z2 or ultra96;
-	- mode can be `h` to launch Vivado HLS synthesis, `b` to launch the Vivado project (needs HLS synthesis results), `a` to launch both;
-5.	The results will be visible in `clone_path/BNN_PYNQ/bnn/src/network/output/` that is organized as follows:
-	- bitstream: contains the generated bitstream(s);
-	- hls-syn: contains the Vivado HLS generated RTL and IP (in the subfolder named as the target network and target platform);
-	- report: contains the Vivado and Vivado HLS reports;
-	- vivado: contains the Vivado project;
-6.	Copy the generated bitstream, hwh and tcl script on the PYNQ board `pip_installation_path/bnn/bitstreams/`
-
+This BNN-PYNQ snapshot retains the upstream BSD 3-Clause license in [`LICENSE`](LICENSE). Third-party and companion repositories may have different terms.
